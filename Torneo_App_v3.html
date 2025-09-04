@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torneo delle Attività</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/dist/index.min.js"></script>
+    <script src="https://unpkg.com/tone@14.7.58/build/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-from: #8B5CF6;
+            --color-to: #EC4899;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            position: relative;
+            z-index: 1;
+            overflow-y: auto;
+        }
+        .noise-overlay::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48ZmlsdGVyIGlkPSJuIj48ZmVDb252b2x2ZU1hdHJpeCBpbi19Im5vaXNlIiB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMSAwIDAgMCAwIDAgMSAwIDAgMCAwIDAgMSAwIDAgMCAwIDAgMSAwIiBzdHlsaW5nPSJmaWxsOiAjRkZGIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNuKSIvPjwvc3ZnPg==');
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: -1;
+        }
+        .bg-shapes {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            filter: blur(80px) opacity(0.8);
+            background: radial-gradient(circle at 10% 20%, var(--color-from), transparent),
+                        radial-gradient(circle at 80% 90%, var(--color-to), transparent),
+                        radial-gradient(circle at 50% 50%, var(--color-from), transparent);
+            animation: move-shapes 15s ease infinite;
+        }
+        @keyframes move-shapes {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.2) translate(10%, -10%); }
+            100% { transform: scale(1) translate(0, 0); }
+        }
+        .glass-box {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 10;
+        }
+        .glass-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+        }
+        .button-glow {
+            box-shadow: 0 0 10px var(--color-from), inset 0 0 10px var(--color-from);
+        }
+        .button-glow:hover {
+            box-shadow: 0 0 20px var(--color-from), inset 0 0 20px var(--color-from);
+        }
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(to right, var(--color-from), var(--color-to));
+        }
+        .text-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .new-tournament-btn {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background-image: linear-gradient(to right, #EF4444, #F97316);
+            color: white;
+        }
+        .final-winners-btn-gradient {
+            background-image: linear-gradient(to right, #EC4899, #8B5CF6);
+            color: black;
+        }
+    </style>
+</head>
+<body class="text-white flex flex-col items-center justify-start min-h-screen p-4 md:p-8 relative noise-overlay">
+    <div class="bg-shapes"></div>
+
+    <!-- Pulsante Nuovo Torneo, sempre visibile -->
+    <button id="new-tournament-btn" class="new-tournament-btn px-4 py-2 text-sm font-bold rounded-full shadow-lg transition-all duration-300 transform scale-100 hover:scale-105 z-50">Nuovo Torneo</button>
+
+    <div id="main-container" class="w-full max-w-md mx-auto flex flex-col items-center relative z-20 min-h-screen justify-center">
+        <!-- Schermata iniziale: input titolo torneo principale -->
+        <div id="title-input-container" class="w-full flex flex-col items-center justify-center p-6 sm:p-8 md:p-12 glass-box transition-all duration-700 h-96">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-center mb-6 text-white tracking-wide animate-pulse">Torneo delle Attività</h1>
+            <input type="text" id="tournament-title-input" placeholder="Dai un nome al torneo..." class="text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-center text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300">
+        </div>
+
+        <!-- Schermata di creazione dei sotto-tornei -->
+        <div id="sub-tournament-creation-container" class="hidden w-full flex-col items-center opacity-0 transition-opacity duration-500">
+             <div class="w-full flex flex-col items-center p-6 sm:p-8 md:p-12 glass-box rounded-2xl mb-6">
+                 <h2 id="current-main-tournament-title" class="text-4xl sm:text-5xl font-extrabold gradient-text animate-pulse mb-6 text-center cursor-pointer"></h2>
+                 <input type="text" id="sub-tournament-title-input" placeholder="Nome del sotto-torneo" class="text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300 mb-4">
+                 
+                 <!-- Box Attività e pulsante, visibili solo dopo aver inserito il titolo del sotto-torneo -->
+                 <div id="activities-input-container" class="hidden w-full flex-col items-center opacity-0">
+                     <h3 id="current-sub-tournament-title" class="text-3xl sm:text-4xl font-bold gradient-text mb-4 text-center cursor-pointer"></h3>
+                     <div class="w-full flex flex-col space-y-2 mb-4">
+                         <div id="current-activities-list"></div>
+                         <input type="text" id="activity-input" placeholder="Inserisci un'attività" class="text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-lg font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300">
+                         <button id="add-sub-tournament-btn" class="px-8 py-4 w-full text-lg sm:text-xl font-bold rounded-full shadow-lg transition-all duration-300 transform scale-100 disabled:opacity-50 disabled:cursor-not-allowed bg-purple-500 text-white hover:scale-105 button-glow mt-4">
+                             Inizia Sotto-torneo
+                         </button>
+                     </div>
+                 </div>
+             </div>
+        </div>
+
+        <!-- Contenitore del torneo (visibile durante i match) -->
+        <div id="tournament-match-container" class="hidden w-full flex-col items-center space-y-6 mt-8 opacity-0 transition-opacity duration-500">
+            <h3 id="current-tournament-title" class="text-3xl sm:text-4xl font-bold gradient-text mb-4 text-center"></h3>
+            <p id="match-timer" class="text-xl sm:text-2xl font-bold gradient-text"></p>
+            <div id="match-options" class="w-full flex flex-col space-y-4"></div>
+        </div>
+
+        <!-- Contenitore del risultato finale -->
+        <div id="final-result-container" class="hidden w-full flex-col items-center space-y-8 mt-8 opacity-0 transition-opacity duration-500">
+            <h2 id="final-tournament-title" class="text-4xl sm:text-5xl font-extrabold gradient-text animate-pulse mb-6 text-center"></h2>
+            <div id="final-result-box" class="w-full flex flex-col p-6 sm:p-8 glass-box transition-all duration-700">
+                <h3 class="text-xl sm:text-2xl font-semibold mb-4 text-center">Il Vincitore Assoluto è:</h3>
+                <p id="final-phrase" class="text-lg sm:text-xl text-center font-medium"></p>
+            </div>
+        </div>
+        
+        <!-- Contenitore dei vincitori dei sotto-tornei spostato in fondo -->
+        <div id="sub-tournaments-list-display" class="w-full flex flex-wrap justify-center gap-4 mt-8"></div>
+
+
+        <!-- Messaggio di avviso/errore personalizzato -->
+        <div id="custom-alert" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 p-6 rounded-2xl shadow-xl z-50 transform scale-0 transition-transform duration-300">
+            <p id="alert-message" class="text-center text-white text-lg font-medium"></p>
+        </div>
+    </div>
+    <canvas id="confetti-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-40"></canvas>
+
+    <script>
+        // Variabili globali per gestire lo stato dell'app
+        let gameState = 'titleInput';
+        let tournamentTitle = '';
+        let subTournaments = [];
+        let subTournamentResults = [];
+        let currentActivities = [];
+        let timer = null;
+        let matchTimer = 5;
+        let pageColors = [
+            { from: 'from-purple-500', to: 'to-pink-500' },
+            { from: 'from-emerald-400', to: 'to-cyan-500' },
+            { from: 'from-rose-500', to: 'to-yellow-500' },
+            { from: 'from-indigo-600', to: 'to-blue-400' }
+        ];
+        let currentColorIndex = 0;
+
+        // Riferimenti agli elementi DOM
+        const body = document.body;
+        const titleInputContainer = document.getElementById('title-input-container');
+        const tournamentTitleInput = document.getElementById('tournament-title-input');
+        const subTournamentCreationContainer = document.getElementById('sub-tournament-creation-container');
+        const activitiesInputContainer = document.getElementById('activities-input-container');
+        const currentMainTournamentTitle = document.getElementById('current-main-tournament-title');
+        const subTournamentTitleInput = document.getElementById('sub-tournament-title-input');
+        const currentSubTournamentTitle = document.getElementById('current-sub-tournament-title');
+        const activityInput = document.getElementById('activity-input');
+        const currentActivitiesList = document.getElementById('current-activities-list');
+        const addSubTournamentBtn = document.getElementById('add-sub-tournament-btn');
+        const subTournamentsListDisplay = document.getElementById('sub-tournaments-list-display');
+        const tournamentMatchContainer = document.getElementById('tournament-match-container');
+        const currentTournamentTitle = document.getElementById('current-tournament-title');
+        const matchTimerText = document.getElementById('match-timer');
+        const matchOptions = document.getElementById('match-options');
+        const finalResultContainer = document.getElementById('final-result-container');
+        const finalTournamentTitle = document.getElementById('final-tournament-title');
+        const finalResultBox = document.getElementById('final-result-box');
+        const finalPhraseText = document.getElementById('final-phrase');
+        const newTournamentBtn = document.getElementById('new-tournament-btn');
+        const customAlert = document.getElementById('custom-alert');
+        const alertMessage = document.getElementById('alert-message');
+        const confettiCanvas = document.getElementById('confetti-canvas');
+
+        // Suoni per le interazioni
+        const synth = new Tone.Synth({
+            oscillator: { type: 'triangle' },
+            envelope: { release: 0.1, sustain: 0.2 }
+        }).toDestination();
+        const drum = new Tone.MembraneSynth().toDestination();
+        const buttonClickSound = () => synth.triggerAttackRelease("C4", "16n");
+        const matchStartSound = () => synth.triggerAttackRelease("E4", "8n", Tone.now());
+        const winnerSelectSound = () => {
+            const now = Tone.now();
+            synth.triggerAttackRelease("G4", "8n", now);
+            synth.triggerAttackRelease("C5", "8n", now + 0.1);
+        };
+        
+        function playCelebrationMusic() {
+            const now = Tone.now();
+            synth.triggerAttackRelease("C4", "8n", now);
+            synth.triggerAttackRelease("E4", "8n", now + 0.25);
+            synth.triggerAttackRelease("G4", "8n", now + 0.5);
+            synth.triggerAttackRelease("C5", "8n", now + 0.75);
+            drum.triggerAttackRelease("C1", "16n");
+        }
+
+        // Inizializza l'istanza dei coriandoli
+        const confettiSettings = { target: 'confetti-canvas', max: 150 };
+        const confetti = new ConfettiGenerator(confettiSettings);
+
+        // Funzione per impostare i colori di sfondo
+        function setBackgroundGradient(colorPair) {
+            if (typeof tailwind === 'undefined' || !tailwind.theme || !tailwind.theme.colors) {
+                console.warn('Tailwind CSS object not yet available. Skipping gradient update.');
+                return;
+            }
+            const fromColor = tailwind.theme.colors[colorPair.from.split('-')[1]]['500'];
+            const toColor = tailwind.theme.colors[colorPair.to.split('-')[1]]['500'];
+            document.documentElement.style.setProperty('--color-from', fromColor);
+            document.documentElement.style.setProperty('--color-to', toColor);
+        }
+
+        // Mostra un messaggio di avviso personalizzato
+        function showAlert(message) {
+            alertMessage.textContent = message;
+            customAlert.classList.remove('scale-0');
+            customAlert.classList.add('scale-100');
+            setTimeout(() => {
+                customAlert.classList.remove('scale-100');
+                customAlert.classList.add('scale-0');
+            }, 2000);
+        }
+
+        // Gestisce il passaggio tra le schermate
+        function showScreen(screenId) {
+            const screens = [
+                titleInputContainer,
+                subTournamentCreationContainer,
+                tournamentMatchContainer,
+                finalResultContainer
+            ];
+            screens.forEach(screen => {
+                if (screen.id === screenId) {
+                    screen.classList.remove('hidden', 'opacity-0');
+                    screen.classList.add('opacity-100');
+                } else {
+                    screen.classList.add('hidden', 'opacity-0');
+                }
+            });
+        }
+        
+        // Fasi del gioco
+        function startTitleInput() {
+            gameState = 'titleInput';
+            showScreen('title-input-container');
+            tournamentTitleInput.focus();
+        }
+        
+        function startSubTournamentCreation() {
+            gameState = 'subTournamentCreation';
+            buttonClickSound();
+            
+            titleInputContainer.classList.remove('h-96', 'p-6', 'sm:p-8', 'md:p-12');
+            titleInputContainer.classList.add('p-4', 'sm:p-6', 'w-full', 'glass-box-mini');
+            
+            setTimeout(() => {
+                currentMainTournamentTitle.textContent = tournamentTitle;
+                showScreen('sub-tournament-creation-container');
+                subTournamentTitleInput.focus();
+                checkAddSubTournamentState();
+            }, 500);
+        }
+
+        function startActivitiesInput() {
+            if (subTournamentTitleInput.value.trim() === '') {
+                showAlert('Inserisci un nome per il sotto-torneo.');
+                return;
+            }
+            const subTitle = subTournamentTitleInput.value.trim();
+            currentSubTournamentTitle.textContent = subTitle;
+            subTournamentTitleInput.classList.add('hidden', 'opacity-0');
+            activitiesInputContainer.classList.remove('hidden', 'opacity-0');
+            activitiesInputContainer.classList.add('opacity-100');
+            activityInput.focus();
+        }
+
+        function startMiniTournament(subTournament) {
+            gameState = 'miniTournament';
+            currentActivities = [...subTournament.activities].sort(() => Math.random() - 0.5);
+
+            subTournamentCreationContainer.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                subTournamentCreationContainer.classList.add('hidden');
+                tournamentMatchContainer.classList.remove('hidden', 'opacity-0');
+                tournamentMatchContainer.classList.add('opacity-100');
+                currentTournamentTitle.textContent = subTournament.title;
+                matchStartSound();
+                startNextMatch(currentActivities, subTournament.title);
+            }, 500);
+        }
+
+        function startFinalPhase() {
+            gameState = 'final';
+            showScreen('final-result-container');
+            
+            finalTournamentTitle.textContent = tournamentTitle;
+            finalResultBox.classList.remove('bg-white/10');
+            finalResultBox.classList.add('bg-white/20');
+            
+            let finalPhraseHTML = '';
+            subTournamentResults.forEach(result => {
+                finalPhraseHTML += `<p class="mb-2"><span class="font-bold">${result.title}:</span> ${result.winner}</p>`;
+            });
+
+            finalPhraseText.innerHTML = finalPhraseHTML;
+            
+            setTimeout(() => {
+                finalResultContainer.classList.add('opacity-100');
+                confetti.render();
+                playCelebrationMusic();
+            }, 2000);
+        }
+
+        function startNextMatch(activities, subTournamentTitle) {
+            if (activities.length === 1) {
+                // Il torneo è finito, memorizza il vincitore e il titolo
+                subTournamentResults.push({ title: subTournamentTitle, winner: activities[0] });
+
+                // Aggiorna la lista dei sotto-tornei completati con il nuovo stile
+                const entryContainer = document.createElement('div');
+                entryContainer.className = 'w-full sm:w-1/2 lg:w-1/3 p-3 glass-box flex flex-col items-center space-y-2';
+
+                const titleBubble = document.createElement('div');
+                titleBubble.textContent = subTournamentTitle;
+                titleBubble.className = 'px-4 py-1 text-sm font-semibold rounded-full bg-white/10';
+
+                const winnerBox = document.createElement('div');
+                winnerBox.textContent = activities[0];
+                winnerBox.className = 'w-full px-4 py-2 text-center text-base font-medium glass-box';
+                
+                // Append elements to container
+                entryContainer.appendChild(titleBubble);
+                entryContainer.appendChild(winnerBox);
+                subTournamentsListDisplay.appendChild(entryContainer);
+
+
+                // Torna alla schermata di creazione
+                setTimeout(() => {
+                    tournamentMatchContainer.classList.add('hidden', 'opacity-0');
+                    subTournamentCreationContainer.classList.remove('hidden', 'opacity-0');
+                    subTournamentCreationContainer.classList.add('opacity-100');
+                    subTournamentTitleInput.value = '';
+                    // Correzione: Mostra nuovamente l'input del titolo del sotto-torneo e nasconde la box attività
+                    subTournamentTitleInput.classList.remove('hidden', 'opacity-0');
+                    activitiesInputContainer.classList.add('hidden', 'opacity-0');
+                    subTournamentTitleInput.focus();
+                }, 1000);
+                return;
+            }
+            
+            const option1 = activities.shift();
+            const option2 = activities.length > 0 ? activities.shift() : null;
+            
+            matchOptions.innerHTML = '';
+            
+            const createOptionElement = (text, onClick) => {
+                const button = document.createElement('button');
+                button.textContent = text;
+                button.className = 'glass-box p-4 sm:p-6 text-lg sm:text-xl font-semibold text-center transform transition-all duration-300 hover:scale-105';
+                button.onclick = () => {
+                    winnerSelectSound();
+                    onClick();
+                };
+                return button;
+            };
+
+            const option1Btn = createOptionElement(option1, () => selectWinner(option1, activities, subTournamentTitle));
+            matchOptions.appendChild(option1Btn);
+
+            if (option2) {
+                const option2Btn = createOptionElement(option2, () => selectWinner(option2, activities, subTournamentTitle));
+                matchOptions.appendChild(option2Btn);
+            } else {
+                 activities.push(option1);
+                 startNextMatch(activities, subTournamentTitle);
+                 return;
+            }
+            
+            matchTimer = 5;
+            matchTimerText.textContent = `Scegli entro ${matchTimer} secondi...`;
+            clearTimeout(timer);
+            timer = setTimeout(() => handleTimeout(activities, subTournamentTitle), 5000);
+        }
+
+        function selectWinner(winner, activities, subTournamentTitle) {
+            clearTimeout(timer);
+            activities.push(winner);
+            
+            if (activities.length > 1) {
+                 activities.sort(() => Math.random() - 0.5);
+            }
+            
+            startNextMatch(activities, subTournamentTitle);
+        }
+        
+        function handleTimeout(activities, subTournamentTitle) {
+            showAlert('Tempo scaduto! Scegli più velocemente.');
+            const option1 = matchOptions.children[0].textContent;
+            const option2 = matchOptions.children[1].textContent;
+            activities.push(option1, option2);
+            startNextMatch(activities, subTournamentTitle);
+        }
+
+        function resetGame() {
+            tournamentTitle = '';
+            subTournaments = [];
+            subTournamentResults = [];
+            currentActivities = [];
+            currentActivitiesList.innerHTML = '';
+            subTournamentsListDisplay.innerHTML = '';
+            
+            finalResultContainer.classList.add('hidden', 'opacity-0');
+            titleInputContainer.classList.remove('p-4', 'sm:p-6', 'glass-box-mini');
+            titleInputContainer.classList.add('p-6', 'sm:p-8', 'md:p-12', 'h-96');
+            
+            confetti.clear();
+
+            currentColorIndex = 0;
+            setBackgroundGradient(pageColors[currentColorIndex]);
+            
+            startTitleInput();
+
+            const existingFinalBtn = document.getElementById('show-final-results-btn');
+            if (existingFinalBtn) {
+                existingFinalBtn.remove();
+            }
+        }
+        
+        function makeTitleEditable(element, onSave) {
+            element.addEventListener('dblclick', () => {
+                const text = element.textContent;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = text;
+                input.className = 'text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-center text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300';
+                
+                element.replaceWith(input);
+                input.focus();
+                
+                const saveChanges = () => {
+                    const newText = input.value.trim();
+                    if (newText) {
+                        element.textContent = newText;
+                        onSave(newText);
+                    }
+                    input.replaceWith(element);
+                };
+                
+                input.addEventListener('blur', saveChanges);
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        saveChanges();
+                    }
+                });
+            });
+        }
+        
+        function checkAddSubTournamentState() {
+            if (currentActivitiesList.children.length >= 2) {
+                addSubTournamentBtn.disabled = false;
+                addSubTournamentBtn.classList.remove('disabled:opacity-50');
+            } else {
+                 addSubTournamentBtn.disabled = true;
+                 addSubTournamentBtn.classList.add('disabled:opacity-50');
+            }
+        }
+
+        // Listeners principali
+        tournamentTitleInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && tournamentTitleInput.value.trim() !== '') {
+                tournamentTitle = tournamentTitleInput.value.trim();
+                startSubTournamentCreation();
+            }
+        });
+
+        subTournamentTitleInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && subTournamentTitleInput.value.trim() !== '') {
+                 startActivitiesInput();
+            }
+        });
+
+        activityInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && activityInput.value.trim() !== '') {
+                const newActivity = activityInput.value.trim();
+                
+                const activityBox = document.createElement('div');
+                activityBox.textContent = newActivity;
+                activityBox.className = 'glass-box px-4 py-2 w-full text-sm sm:text-base font-medium transition-all duration-300';
+                currentActivitiesList.appendChild(activityBox);
+                
+                activityInput.value = '';
+                
+                checkAddSubTournamentState();
+            }
+        });
+
+        addSubTournamentBtn.addEventListener('click', () => {
+             const subTournamentTitle = currentSubTournamentTitle.textContent;
+             const activities = Array.from(currentActivitiesList.children).map(el => el.textContent);
+             
+             if (subTournamentTitle && activities.length >= 2) {
+                 const newSubTournament = { title: subTournamentTitle, activities: activities };
+                 subTournaments.push(newSubTournament);
+                 
+                 subTournamentTitleInput.value = '';
+                 currentActivitiesList.innerHTML = '';
+                 activityInput.value = '';
+                 
+                 checkAddSubTournamentState();
+                 startMiniTournament(newSubTournament);
+             } else {
+                 showAlert('Devi inserire almeno 2 attività per un sotto-torneo.');
+             }
+        });
+        
+        // Aggiungi listener per il pulsante "Nuovo Torneo" sempre visibile
+        newTournamentBtn.addEventListener('click', resetGame);
+        
+        // Aggiungi listener per rendere i titoli modificabili
+        makeTitleEditable(currentMainTournamentTitle, (newTitle) => tournamentTitle = newTitle);
+        makeTitleEditable(currentSubTournamentTitle, (newTitle) => {}); // Il titolo del sotto-torneo è solo locale
+
+        // Avvio iniziale dell'app
+        document.addEventListener('DOMContentLoaded', () => {
+             setTimeout(() => {
+                setBackgroundGradient(pageColors[currentColorIndex]);
+                startTitleInput();
+            }, 150);
+        });
+    </script>
+</body>
+</html>
