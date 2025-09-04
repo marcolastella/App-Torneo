@@ -87,9 +87,28 @@
             background-image: linear-gradient(to right, #EF4444, #F97316);
             color: white;
         }
-        .final-winners-btn-gradient {
-            background-image: linear-gradient(to right, #EC4899, #8B5CF6);
-            color: black;
+        .silver-gloss-button {
+            background-image: linear-gradient(to bottom, #E6E6E6, #C0C0C0, #808080);
+            color: #1a202c;
+            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+            border: 1px solid #7F7F7F;
+            transition: all 0.3s ease-in-out;
+        }
+        .silver-gloss-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), inset 0 2px 6px rgba(255, 255, 255, 0.8);
+        }
+        .green-gradient-button {
+            background-image: linear-gradient(to right, #34D399, #06B6D4);
+            color: white;
+            box-shadow: 0 4px 15px rgba(52, 211, 153, 0.3), inset 0 2px 4px rgba(6, 182, 212, 0.6);
+            border: 1px solid #14B8A6;
+            transition: all 0.3s ease-in-out;
+        }
+        .green-gradient-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(52, 211, 153, 0.4), inset 0 2px 6px rgba(6, 182, 212, 0.8);
         }
     </style>
 </head>
@@ -115,8 +134,8 @@
                  <!-- Box Attività e pulsante, visibili solo dopo aver inserito il titolo del sotto-torneo -->
                  <div id="activities-input-container" class="hidden w-full flex-col items-center opacity-0">
                      <h3 id="current-sub-tournament-title" class="text-3xl sm:text-4xl font-bold gradient-text mb-4 text-center cursor-pointer"></h3>
-                     <div class="w-full flex flex-col space-y-2 mb-4">
-                         <div id="current-activities-list"></div>
+                     <div class="w-full flex flex-col space-y-4 mb-4">
+                         <div id="current-activities-list" class="flex flex-col space-y-4"></div>
                          <input type="text" id="activity-input" placeholder="Inserisci un'attività" class="text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-lg font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300">
                          <button id="add-sub-tournament-btn" class="px-8 py-4 w-full text-lg sm:text-xl font-bold rounded-full shadow-lg transition-all duration-300 transform scale-100 disabled:opacity-50 disabled:cursor-not-allowed bg-purple-500 text-white hover:scale-105 button-glow mt-4">
                              Inizia Sotto-torneo
@@ -124,12 +143,20 @@
                      </div>
                  </div>
              </div>
+             <!-- Pulsante "Scopri tutti i vincitori" -->
+             <button id="show-final-results-btn" class="hidden px-8 py-4 w-full mt-8 text-lg sm:text-xl font-bold rounded-full shadow-lg green-gradient-button">
+                 Scopri tutti i vincitori
+             </button>
         </div>
 
         <!-- Contenitore del torneo (visibile durante i match) -->
         <div id="tournament-match-container" class="hidden w-full flex-col items-center space-y-6 mt-8 opacity-0 transition-opacity duration-500">
             <h3 id="current-tournament-title" class="text-3xl sm:text-4xl font-bold gradient-text mb-4 text-center"></h3>
-            <p id="match-timer" class="text-xl sm:text-2xl font-bold gradient-text"></p>
+            <!-- Contenitore del timer con barra di caricamento -->
+            <div id="match-timer-container" class="w-full h-10 relative glass-box p-1 overflow-hidden rounded-full">
+                <div id="match-progress-bar" class="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-linear" style="background-image: linear-gradient(to right, var(--color-from), var(--color-to)); width: 100%;"></div>
+                <p id="match-timer-text" class="relative z-10 w-full h-full flex items-center justify-center text-sm font-bold text-white tracking-wide"></p>
+            </div>
             <div id="match-options" class="w-full flex flex-col space-y-4"></div>
         </div>
 
@@ -160,7 +187,8 @@
         let subTournaments = [];
         let subTournamentResults = [];
         let currentActivities = [];
-        let timer = null;
+        let timer = null; // Per il timeout di selezione
+        let countdownInterval = null; // Per l'intervallo di conto alla rovescia
         let matchTimer = 5;
         let pageColors = [
             { from: 'from-purple-500', to: 'to-pink-500' },
@@ -185,7 +213,9 @@
         const subTournamentsListDisplay = document.getElementById('sub-tournaments-list-display');
         const tournamentMatchContainer = document.getElementById('tournament-match-container');
         const currentTournamentTitle = document.getElementById('current-tournament-title');
-        const matchTimerText = document.getElementById('match-timer');
+        const matchTimerContainer = document.getElementById('match-timer-container'); // Nuovo elemento
+        const matchProgressBar = document.getElementById('match-progress-bar'); // Nuovo elemento
+        const matchTimerText = document.getElementById('match-timer-text'); // Nuovo elemento
         const matchOptions = document.getElementById('match-options');
         const finalResultContainer = document.getElementById('final-result-container');
         const finalTournamentTitle = document.getElementById('final-tournament-title');
@@ -195,6 +225,7 @@
         const customAlert = document.getElementById('custom-alert');
         const alertMessage = document.getElementById('alert-message');
         const confettiCanvas = document.getElementById('confetti-canvas');
+        const showFinalResultsBtn = document.getElementById('show-final-results-btn');
 
         // Suoni per le interazioni
         const synth = new Tone.Synth({
@@ -316,6 +347,12 @@
         }
 
         function startFinalPhase() {
+            // Aggiungi un controllo di sicurezza per eliminare eventuali timer pendenti
+            clearTimeout(timer);
+            
+            // Ferma anche l'intervallo di conto alla rovescia
+            clearInterval(countdownInterval);
+
             gameState = 'final';
             showScreen('final-result-container');
             
@@ -359,6 +396,9 @@
                 entryContainer.appendChild(winnerBox);
                 subTournamentsListDisplay.appendChild(entryContainer);
 
+                // IMPORTANTE: Ferma il timer per evitare che il pop-up "Tempo scaduto" appaia sulla schermata successiva
+                clearTimeout(timer);
+                clearInterval(countdownInterval);
 
                 // Torna alla schermata di creazione
                 setTimeout(() => {
@@ -370,6 +410,12 @@
                     subTournamentTitleInput.classList.remove('hidden', 'opacity-0');
                     activitiesInputContainer.classList.add('hidden', 'opacity-0');
                     subTournamentTitleInput.focus();
+
+                    // Mostra il pulsante per il risultato finale se c'è almeno un risultato
+                    if (subTournamentResults.length > 0) {
+                        showFinalResultsBtn.classList.remove('hidden');
+                    }
+
                 }, 1000);
                 return;
             }
@@ -402,14 +448,32 @@
                  return;
             }
             
+            // Inizializza e avvia il timer e la barra di progresso
             matchTimer = 5;
+            matchProgressBar.style.width = '100%';
             matchTimerText.textContent = `Scegli entro ${matchTimer} secondi...`;
+            
             clearTimeout(timer);
+            clearInterval(countdownInterval);
+            
             timer = setTimeout(() => handleTimeout(activities, subTournamentTitle), 5000);
+            
+            countdownInterval = setInterval(() => {
+                matchTimer--;
+                if (matchTimer > 0) {
+                    matchTimerText.textContent = `Scegli entro ${matchTimer} secondi...`;
+                    matchProgressBar.style.width = `${(matchTimer / 5) * 100}%`;
+                } else {
+                    matchTimerText.textContent = `Tempo scaduto!`;
+                    matchProgressBar.style.width = '0%';
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
         }
 
         function selectWinner(winner, activities, subTournamentTitle) {
             clearTimeout(timer);
+            clearInterval(countdownInterval);
             activities.push(winner);
             
             if (activities.length > 1) {
@@ -428,6 +492,10 @@
         }
 
         function resetGame() {
+            // Aggiungi un controllo di sicurezza per eliminare eventuali timer pendenti
+            clearTimeout(timer);
+            clearInterval(countdownInterval);
+            
             tournamentTitle = '';
             subTournaments = [];
             subTournamentResults = [];
@@ -440,16 +508,12 @@
             titleInputContainer.classList.add('p-6', 'sm:p-8', 'md:p-12', 'h-96');
             
             confetti.clear();
+            showFinalResultsBtn.classList.add('hidden');
 
             currentColorIndex = 0;
             setBackgroundGradient(pageColors[currentColorIndex]);
             
             startTitleInput();
-
-            const existingFinalBtn = document.getElementById('show-final-results-btn');
-            if (existingFinalBtn) {
-                existingFinalBtn.remove();
-            }
         }
         
         function makeTitleEditable(element, onSave) {
@@ -539,6 +603,9 @@
              }
         });
         
+        // Listener per il pulsante "Scopri tutti i vincitori"
+        showFinalResultsBtn.addEventListener('click', startFinalPhase);
+
         // Aggiungi listener per il pulsante "Nuovo Torneo" sempre visibile
         newTournamentBtn.addEventListener('click', resetGame);
         
