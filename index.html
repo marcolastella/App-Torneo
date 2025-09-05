@@ -110,6 +110,24 @@
             transform: scale(1.05);
             box-shadow: 0 6px 20px rgba(52, 211, 153, 0.4), inset 0 2px 6px rgba(6, 182, 212, 0.8);
         }
+        .winner-box {
+            animation: pulse 1.5s infinite;
+        }
+        .fade-in-down {
+            animation: fadeInDown 0.5s ease-out;
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse-once {
+            animation: pulse-once 1s ease-in-out;
+        }
+        @keyframes pulse-once {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body class="text-white flex flex-col items-center justify-start min-h-screen p-4 md:p-8 relative noise-overlay">
@@ -197,6 +215,7 @@
             { from: 'from-indigo-600', to: 'to-blue-400' }
         ];
         let currentColorIndex = 0;
+        let confetti = null;
 
         // Riferimenti agli elementi DOM
         const body = document.body;
@@ -226,33 +245,69 @@
         const alertMessage = document.getElementById('alert-message');
         const confettiCanvas = document.getElementById('confetti-canvas');
         const showFinalResultsBtn = document.getElementById('show-final-results-btn');
-
-        // Suoni per le interazioni
-        const synth = new Tone.Synth({
-            oscillator: { type: 'triangle' },
-            envelope: { release: 0.1, sustain: 0.2 }
-        }).toDestination();
-        const drum = new Tone.MembraneSynth().toDestination();
-        const buttonClickSound = () => synth.triggerAttackRelease("C4", "16n");
-        const matchStartSound = () => synth.triggerAttackRelease("E4", "8n", Tone.now());
-        const winnerSelectSound = () => {
-            const now = Tone.now();
-            synth.triggerAttackRelease("G4", "8n", now);
-            synth.triggerAttackRelease("C5", "8n", now + 0.1);
-        };
         
-        function playCelebrationMusic() {
-            const now = Tone.now();
-            synth.triggerAttackRelease("C4", "8n", now);
-            synth.triggerAttackRelease("E4", "8n", now + 0.25);
-            synth.triggerAttackRelease("G4", "8n", now + 0.5);
-            synth.triggerAttackRelease("C5", "8n", now + 0.75);
-            drum.triggerAttackRelease("C1", "16n");
+        // Suoni
+        const blipSynth = new Tone.MonoSynth({
+            oscillator: { type: "sine" },
+            envelope: {
+                attack: 0.005,
+                decay: 0.2,
+                sustain: 0,
+                release: 0.1,
+            },
+            filterEnvelope: {
+                attack: 0.005,
+                decay: 0.1,
+                sustain: 0.05,
+                release: 0.1,
+                baseFrequency: 200,
+                octaves: 2,
+            }
+        }).toDestination();
+        
+        const swooshSynth = new Tone.MonoSynth({
+            oscillator: { type: "triangle" },
+            envelope: {
+                attack: 0.05,
+                decay: 0.4,
+                sustain: 0,
+                release: 0.1,
+            },
+            filterEnvelope: {
+                attack: 0.05,
+                decay: 0.2,
+                sustain: 0.1,
+                release: 0.2,
+                baseFrequency: 100,
+                octaves: 3,
+            }
+        }).toDestination();
+        
+        const winnerSynth = new Tone.PolySynth(Tone.MonoSynth, {
+            oscillator: { type: "triangle" },
+            envelope: {
+                attack: 0.02,
+                decay: 0.3,
+                sustain: 0,
+                release: 0.2,
+            },
+            volume: -10 // Riduci il volume per renderlo meno aggressivo
+        }).toDestination();
+        
+
+        function playBlipSound() {
+            blipSynth.triggerAttackRelease("C5", "8n");
+        }
+        
+        function playSwooshSound() {
+            swooshSynth.triggerAttackRelease("G3", "4n");
         }
 
-        // Inizializza l'istanza dei coriandoli
-        const confettiSettings = { target: 'confetti-canvas', max: 150 };
-        const confetti = new ConfettiGenerator(confettiSettings);
+        // Nuovo suono per il vincitore a tre note
+        function playWinnerMusic() {
+            // Suono a tre note per celebrare il vincitore
+            winnerSynth.triggerAttackRelease(["C4", "E4", "G4"], "4n");
+        }
 
         // Funzione per impostare i colori di sfondo
         function setBackgroundGradient(colorPair) {
@@ -304,7 +359,7 @@
         
         function startSubTournamentCreation() {
             gameState = 'subTournamentCreation';
-            buttonClickSound();
+            playSwooshSound();
             
             titleInputContainer.classList.remove('h-96', 'p-6', 'sm:p-8', 'md:p-12');
             titleInputContainer.classList.add('p-4', 'sm:p-6', 'w-full', 'glass-box-mini');
@@ -333,6 +388,7 @@
         function startMiniTournament(subTournament) {
             gameState = 'miniTournament';
             currentActivities = [...subTournament.activities].sort(() => Math.random() - 0.5);
+            playSwooshSound();
 
             subTournamentCreationContainer.classList.add('opacity-0');
             
@@ -341,7 +397,6 @@
                 tournamentMatchContainer.classList.remove('hidden', 'opacity-0');
                 tournamentMatchContainer.classList.add('opacity-100');
                 currentTournamentTitle.textContent = subTournament.title;
-                matchStartSound();
                 startNextMatch(currentActivities, subTournament.title);
             }, 500);
         }
@@ -369,8 +424,11 @@
             
             setTimeout(() => {
                 finalResultContainer.classList.add('opacity-100');
+                // Re-istanzia e renderizza i coriandoli
+                const confettiSettings = { target: 'confetti-canvas', max: 300 };
+                confetti = new ConfettiGenerator(confettiSettings);
                 confetti.render();
-                playCelebrationMusic();
+                playWinnerMusic(); // Chiama la nuova musichetta
             }, 2000);
         }
 
@@ -381,7 +439,7 @@
 
                 // Aggiorna la lista dei sotto-tornei completati con il nuovo stile
                 const entryContainer = document.createElement('div');
-                entryContainer.className = 'w-full sm:w-1/2 lg:w-1/3 p-3 glass-box flex flex-col items-center space-y-2';
+                entryContainer.className = 'w-full sm:w-1/2 lg:w-1/3 p-3 glass-box flex flex-col items-center space-y-2 fade-in-down winner-box';
 
                 const titleBubble = document.createElement('div');
                 titleBubble.textContent = subTournamentTitle;
@@ -428,9 +486,9 @@
             const createOptionElement = (text, onClick) => {
                 const button = document.createElement('button');
                 button.textContent = text;
-                button.className = 'glass-box p-4 sm:p-6 text-lg sm:text-xl font-semibold text-center transform transition-all duration-300 hover:scale-105';
+                button.className = 'glass-box p-4 sm:p-6 text-lg sm:text-xl font-semibold text-center transform transition-all duration-300 hover:scale-105 fade-in-down';
                 button.onclick = () => {
-                    winnerSelectSound();
+                    playBlipSound();
                     onClick();
                 };
                 return button;
@@ -497,6 +555,7 @@
             clearInterval(countdownInterval);
             
             tournamentTitle = '';
+            tournamentTitleInput.value = ''; // Aggiunta questa riga per svuotare l'input
             subTournaments = [];
             subTournamentResults = [];
             currentActivities = [];
@@ -507,7 +566,7 @@
             titleInputContainer.classList.remove('p-4', 'sm:p-6', 'glass-box-mini');
             titleInputContainer.classList.add('p-6', 'sm:p-8', 'md:p-12', 'h-96');
             
-            confetti.clear();
+            if (confetti) { confetti.clear(); }
             showFinalResultsBtn.classList.add('hidden');
 
             currentColorIndex = 0;
@@ -549,9 +608,11 @@
             if (currentActivitiesList.children.length >= 2) {
                 addSubTournamentBtn.disabled = false;
                 addSubTournamentBtn.classList.remove('disabled:opacity-50');
+                addSubTournamentBtn.classList.add('pulse-once');
             } else {
                  addSubTournamentBtn.disabled = true;
                  addSubTournamentBtn.classList.add('disabled:opacity-50');
+                 addSubTournamentBtn.classList.remove('pulse-once');
             }
         }
 
@@ -575,7 +636,7 @@
                 
                 const activityBox = document.createElement('div');
                 activityBox.textContent = newActivity;
-                activityBox.className = 'glass-box px-4 py-2 w-full text-sm sm:text-base font-medium transition-all duration-300';
+                activityBox.className = 'glass-box px-4 py-2 w-full text-sm sm:text-base font-medium transition-all duration-300 fade-in-down';
                 currentActivitiesList.appendChild(activityBox);
                 
                 activityInput.value = '';
