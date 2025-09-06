@@ -236,7 +236,7 @@
     <div id="main-container" class="w-full max-w-md mx-auto flex flex-col items-center relative z-20 min-h-screen justify-center">
 
         <!-- Schermata iniziale: input titolo torneo principale -->
-        <div id="title-input-container" class="w-full flex flex-col items-center justify-center p-6 sm:p-8 md:p-12 glass-box transition-all duration-700 h-96 space-y-6">
+        <div id="title-input-container" class="w-full flex flex-col items-center justify-center p-6 sm:p-8 md:p-12 glass-box transition-all duration-700 space-y-6">
             <!-- Nuovo Logo integrato - Rimosse le classi "hidden md:block" per rendere il testo visibile su mobile -->
             <div class="main-logo-container flex items-center justify-center gap-2 md:gap-4 mb-6">
                 <div class="choose-text left-text">CHOOSE</div>
@@ -251,10 +251,9 @@
             </div>
             <h1 class="text-4xl sm:text-5xl font-extrabold text-center text-white tracking-wide animate-pulse"></h1>
             <input type="text" id="tournament-title-input" placeholder="Cosa vuoi fare?" class="text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-center text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300">
-            <!-- Nuova box per il vincitore precedente -->
-            <div id="previous-winner-box" class="w-full flex flex-col p-4 glass-box opacity-50 transition-all duration-700 hidden">
-                <h3 class="text-sm sm:text-base font-semibold text-center text-white/70 mb-2">Hai scelto:</h3>
-                <p id="previous-winner-name" class="text-base sm:text-lg text-center font-bold text-white"></p>
+            <!-- Box cronologia risultati -->
+            <div id="history-box-main" class="w-full flex flex-col p-2 glass-box opacity-80 transition-all duration-700 hidden">
+                <div id="history-list-main" class="flex flex-row flex-wrap justify-center gap-2 p-1"></div>
             </div>
         </div>
 
@@ -294,6 +293,17 @@
 
         <!-- Contenitore del risultato finale -->
         <div id="final-result-container" class="hidden w-full flex-col items-center space-y-8 mt-8 opacity-0 transition-opacity duration-500">
+            <div class="flex items-center justify-center gap-2 md:gap-4 mb-6">
+                <div class="choose-text">CHOOSE</div>
+                <div class="diamond-container">
+                    <div class="diamond-icon">
+                        <div class="number-container">
+                            <div class="number-two">2</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="choose-text">CHOOSE</div>
+            </div>
             <h2 id="final-tournament-title" class="text-4xl sm:text-5xl font-extrabold gradient-text animate-pulse mb-6 text-center"></h2>
             
             <div id="final-result-box" class="w-full flex flex-col p-6 sm:p-8 glass-box transition-all duration-700 winner-box">
@@ -302,8 +312,8 @@
             </div>
 
             <div id="winner-history-container" class="w-full flex flex-col p-6 sm:p-8 glass-box transition-all duration-700 mb-4 hidden">
-                <h3 class="text-xl sm:text-2xl font-semibold mb-4 text-center">Storico Vincitori</h3>
-                <div id="history-list" class="flex flex-col space-y-4 text-center"></div>
+                <h3 class="text-xl sm:text-2xl font-semibold mb-4 text-center">Hai scelto</h3>
+                <div id="history-list" class="flex flex-row flex-wrap justify-center gap-2"></div>
             </div>
             
             <div class="flex justify-between w-full space-x-4">
@@ -368,8 +378,8 @@
         const rightText = document.querySelector('.right-text');
         const winnerHistoryContainer = document.getElementById('winner-history-container');
         const historyList = document.getElementById('history-list');
-        const previousWinnerBox = document.getElementById('previous-winner-box');
-        const previousWinnerName = document.getElementById('previous-winner-name');
+        const historyBoxMain = document.getElementById('history-box-main');
+        const historyListMain = document.getElementById('history-list-main');
 
         // Suoni
         const blipSynth = new Tone.MonoSynth({
@@ -644,12 +654,23 @@
             
             // Pulisci e aggiorna lo storico dei vincitori
             historyList.innerHTML = '';
-            if (winnerHistory.length > 1) {
+            if (winnerHistory.length > 0) {
                 winnerHistoryContainer.classList.remove('hidden');
+                // Mostra tutti i vincitori dei tornei, incluso quello attuale
                 winnerHistory.forEach((item, index) => {
-                    const historyItem = document.createElement('p');
-                    historyItem.className = 'text-base sm:text-lg font-normal text-white/80';
-                    historyItem.textContent = `${item.title}: ${item.winner}`;
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'bg-white/10 rounded-xl p-3 text-center flex flex-col';
+
+                    const titleElement = document.createElement('span');
+                    titleElement.className = 'text-xs text-white/60 uppercase tracking-wider';
+                    titleElement.textContent = item.title;
+
+                    const winnerElement = document.createElement('span');
+                    winnerElement.className = 'text-base font-bold text-white mt-1';
+                    winnerElement.textContent = item.winner;
+
+                    historyItem.appendChild(titleElement);
+                    historyItem.appendChild(winnerElement);
                     historyList.appendChild(historyItem);
                 });
             } else {
@@ -679,16 +700,32 @@
             finalResultContainer.classList.add('hidden', 'opacity-0');
             
             titleInputContainer.classList.remove('p-4', 'sm:p-6', 'w-full');
-            titleInputContainer.classList.add('p-6', 'sm:p-8', 'md:p-12', 'h-96');
+            titleInputContainer.classList.add('p-6', 'sm:p-8', 'md:p-12');
             
             if (confetti) { confetti.clear(); }
 
-            // Mostra il vincitore precedente se esiste
+            // Mostra la cronologia dei risultati se esiste
             if (winnerHistory.length > 0) {
-                previousWinnerName.textContent = winnerHistory[winnerHistory.length - 1].winner;
-                previousWinnerBox.classList.remove('hidden');
+                historyListMain.innerHTML = ''; // Pulisci la lista
+                winnerHistory.forEach(item => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'bg-white/10 rounded-xl p-3 text-center flex flex-col';
+
+                    const titleElement = document.createElement('span');
+                    titleElement.className = 'text-xs text-white/60 uppercase tracking-wider';
+                    titleElement.textContent = item.title;
+
+                    const winnerElement = document.createElement('span');
+                    winnerElement.className = 'text-base font-bold text-white mt-1';
+                    winnerElement.textContent = item.winner;
+
+                    historyItem.appendChild(titleElement);
+                    historyItem.appendChild(winnerElement);
+                    historyListMain.appendChild(historyItem);
+                });
+                historyBoxMain.classList.remove('hidden');
             } else {
-                previousWinnerBox.classList.add('hidden');
+                historyBoxMain.classList.add('hidden');
             }
             
             showScreen('title-input-container');
@@ -772,3 +809,12 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
