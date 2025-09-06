@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torneo delle Attività</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/dist/index.min.js"></script>
+    <script src="https://unpkg.com/tone@14.7.58/build/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-from: #8B5CF6;
+            --color-to: #EC4899;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            position: relative;
+            z-index: 1;
+            overflow-y: auto;
+        }
+        .noise-overlay::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48ZmlsdGVyIGlkPSJuIj48ZmVDb252b2x2ZU1hdHJpeCBpbi19Im5vaXNlIiB0eXBlPSJtYXRyaXgiIHZhbHVlcz0iMSAwIDAgMCAwIDAgMSAwIDAgMCAwIDAgMSAwIDAgMCAwIDAgMSAwIiBzdHlsaW5nPSJmaWxsOiAjRkZGIi8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNuKSIvPjwvc3ZnPg==');
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: -1;
+        }
+        .bg-shapes {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            filter: blur(80px) opacity(0.8);
+            background: radial-gradient(circle at 10% 20%, var(--color-from), transparent),
+                        radial-gradient(circle at 80% 90%, var(--color-to), transparent),
+                        radial-gradient(circle at 50% 50%, var(--color-from), transparent);
+            animation: move-shapes 15s ease infinite;
+        }
+        @keyframes move-shapes {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.2) translate(10%, -10%); }
+            100% { transform: scale(1) translate(0, 0); }
+        }
+        .glass-box {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 10;
+        }
+        .glass-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+        }
+        .button-glow {
+            box-shadow: 0 0 10px var(--color-from), inset 0 0 10px var(--color-from);
+        }
+        .button-glow:hover {
+            box-shadow: 0 0 20px var(--color-from), inset 0 0 20px var(--color-from);
+        }
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(to right, var(--color-from), var(--color-to));
+        }
+        .text-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .silver-gloss-button {
+            background-image: linear-gradient(to bottom, #E6E6E6, #C0C0C0, #808080);
+            color: #1a202c;
+            text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.6);
+            border: 1px solid #7F7F7F;
+            transition: all 0.3s ease-in-out;
+        }
+        .silver-gloss-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3), inset 0 2px 6px rgba(255, 255, 255, 0.8);
+        }
+        .green-gradient-button {
+            background-image: linear-gradient(to right, #34D399, #06B6D4);
+            color: white;
+            box-shadow: 0 4px 15px rgba(52, 211, 153, 0.3), inset 0 2px 4px rgba(6, 182, 212, 0.6);
+            border: 1px solid #14B8A6;
+            transition: all 0.3s ease-in-out;
+        }
+        .green-gradient-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(52, 211, 153, 0.4), inset 0 2px 6px rgba(6, 182, 212, 0.8);
+        }
+        .orange-button {
+            background-color: #f97316; /* Tailwind orange-500 */
+            color: white;
+            box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .orange-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(249, 115, 22, 0.4);
+        }
+        .winner-box {
+            animation: pulse 1.5s infinite;
+        }
+        .fade-in-down {
+            animation: fadeInDown 0.5s ease-out;
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pulse-once {
+            animation: pulse-once 1s ease-in-out;
+        }
+        @keyframes pulse-once {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        /* Stili per il nuovo logo */
+        .main-logo-container {
+            width: 100%;
+            max-width: 400px;
+        }
+        .choose-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            transition: color 0.5s ease-in-out, transform 0.5s ease-in-out;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        .diamond-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 64px;
+            height: 64px;
+        }
+        .diamond-icon {
+            width: 64px;
+            height: 64px;
+            transform: rotate(45deg);
+            background: conic-gradient(
+                from 0deg,
+                #8e2de2,
+                #4a00e0,
+                #8e2de2
+            );
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(74, 0, 224, 0.5), inset 0 0 10px rgba(142, 45, 226, 0.5);
+            animation: spin 8s infinite ease-in-out;
+            position: relative;
+        }
+        .number-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            animation: rotate-number 8s infinite ease-in-out;
+        }
+        .number-two {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 10px #fff;
+        }
+        @keyframes spin {
+            from { transform: rotate(45deg); }
+            to { transform: rotate(405deg); }
+        }
+        @keyframes rotate-number {
+            from { transform: translate(-50%, -50%) rotate(-45deg) rotateY(0deg); }
+            to { transform: translate(-50%, -50%) rotate(-45deg) rotateY(360deg); }
+        }
+    </style>
+</head>
+<body class="text-white flex flex-col items-center justify-start min-h-screen p-4 md:p-8 relative noise-overlay">
+    <div class="bg-shapes"></div>
+
+    <div id="main-container" class="w-full max-w-md mx-auto flex flex-col items-center relative z-20 min-h-screen justify-center">
+
+        <!-- Pulsante Nuovo Torneo - visibile solo quando necessario -->
+        <div id="new-tournament-btn-wrapper" class="w-full flex justify-center mb-8 hidden">
+            <button id="new-tournament-btn" class="px-6 py-3 rounded-full flex items-center space-x-2 text-lg font-bold bg-gradient-to-r from-red-500 to-orange-500 shadow-lg transition-all duration-300 transform scale-100 hover:scale-110">
+                <span class="text-3xl leading-none">+</span>
+                <span>Nuovo Torneo</span>
+            </button>
+        </div>
+
+        <!-- Schermata iniziale: input titolo torneo principale -->
+        <div id="title-input-container" class="w-full flex flex-col items-center justify-center p-6 sm:p-8 md:p-12 glass-box transition-all duration-700 h-96 space-y-6">
+            <!-- Nuovo Logo integrato -->
+            <div class="main-logo-container flex items-center justify-center gap-2 md:gap-4 mb-6">
+                <div class="choose-text left-text hidden md:block">CHOOSE</div>
+                <div class="diamond-container">
+                    <div class="diamond-icon" id="diamond">
+                        <div class="number-container">
+                            <div class="number-two">2</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="choose-text right-text hidden md:block">CHOOSE</div>
+            </div>
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-center text-white tracking-wide animate-pulse">Torneo delle Attività</h1>
+            <input type="text" id="tournament-title-input" placeholder="Dai un nome al torneo..." class="text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-center text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300">
+        </div>
+
+        <!-- Schermata di creazione dei sotto-tornei -->
+        <div id="sub-tournament-creation-container" class="hidden w-full flex-col items-center opacity-0 transition-opacity duration-500">
+             <div class="w-full flex flex-col items-center p-6 sm:p-8 md:p-12 glass-box rounded-2xl mb-6">
+                 <h2 id="current-main-tournament-title" class="text-4xl sm:text-5xl font-extrabold gradient-text animate-pulse mb-6 text-center cursor-pointer"></h2>
+                 <input type="text" id="sub-tournament-title-input" placeholder="Nome del sotto-torneo" class="text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300 mb-4">
+                 
+                 <!-- Box Attività e pulsante, visibili solo dopo aver inserito il titolo del sotto-torneo -->
+                 <div id="activities-input-container" class="hidden w-full flex-col items-center opacity-0">
+                     <h3 id="current-sub-tournament-title" class="text-3xl sm:text-4xl font-bold gradient-text mb-4 text-center cursor-pointer"></h3>
+                     <div class="w-full flex flex-col space-y-4 mb-4">
+                         <div id="current-activities-list" class="flex flex-col space-y-4"></div>
+                         <input type="text" id="activity-input" placeholder="Inserisci un'attività" class="text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-lg font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300">
+                         <button id="add-sub-tournament-btn" class="px-8 py-4 w-full text-lg sm:text-xl font-bold rounded-full shadow-lg transition-all duration-300 transform scale-100 disabled:opacity-50 disabled:cursor-not-allowed bg-purple-500 text-white hover:scale-105 button-glow mt-4">
+                             Inizia Sotto-torneo
+                         </button>
+                     </div>
+                 </div>
+                 <!-- Pulsante "Scopri tutti i vincitori" -->
+                 <button id="show-final-results-btn" class="hidden px-8 py-4 w-full mt-4 text-lg sm:text-xl font-bold rounded-full shadow-lg green-gradient-button">
+                     Scopri tutti i vincitori
+                 </button>
+             </div>
+        </div>
+
+        <!-- Schermata di selezione durata timer -->
+        <div id="duration-selection-container" class="hidden w-full flex-col items-center opacity-0 transition-opacity duration-500">
+            <div class="w-full flex flex-col items-center p-6 sm:p-8 md:p-12 glass-box rounded-2xl mb-6 text-center">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-6">Seleziona la durata del timer</h2>
+                <div class="w-full flex justify-center space-x-4">
+                    <button id="duration-5s-btn" class="orange-button px-6 py-4 rounded-xl text-lg font-bold">5 Sec</button>
+                    <button id="duration-10s-btn" class="orange-button px-6 py-4 rounded-xl text-lg font-bold">10 Sec</button>
+                    <button id="duration-15s-btn" class="orange-button px-6 py-4 rounded-xl text-lg font-bold">15 Sec</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenitore del torneo (visibile durante i match) -->
+        <div id="tournament-match-container" class="hidden w-full flex-col items-center space-y-6 mt-8 opacity-0 transition-opacity duration-500">
+            <h3 id="current-tournament-title" class="text-3xl sm:text-4xl font-bold gradient-text mb-4 text-center"></h3>
+            <!-- Contenitore del timer con barra di caricamento -->
+            <div id="match-timer-container" class="w-full h-10 relative glass-box p-1 overflow-hidden rounded-full">
+                <div id="match-progress-bar" class="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-linear" style="background-image: linear-gradient(to right, var(--color-from), var(--color-to)); width: 100%;"></div>
+                <p id="match-timer-text" class="relative z-10 w-full h-full flex items-center justify-center text-sm font-bold text-white tracking-wide"></p>
+            </div>
+            <div id="match-options" class="w-full flex flex-col space-y-4"></div>
+        </div>
+
+        <!-- Contenitore del risultato finale -->
+        <div id="final-result-container" class="hidden w-full flex-col items-center space-y-8 mt-8 opacity-0 transition-opacity duration-500">
+            <h2 id="final-tournament-title" class="text-4xl sm:text-5xl font-extrabold gradient-text animate-pulse mb-6 text-center"></h2>
+            <div id="final-result-box" class="w-full flex flex-col p-6 sm:p-8 glass-box transition-all duration-700">
+                <h3 class="text-xl sm:text-2xl font-semibold mb-4 text-center">Il Vincitore Assoluto è:</h3>
+                <p id="final-phrase" class="text-lg sm:text-xl text-center font-medium"></p>
+            </div>
+        </div>
+        
+        <!-- Contenitore dei vincitori dei sotto-tornei spostato in fondo -->
+        <div id="sub-tournaments-list-display" class="w-full flex flex-wrap justify-center gap-4 mt-8"></div>
+
+
+        <!-- Messaggio di avviso/errore personalizzato -->
+        <div id="custom-alert" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-800 p-6 rounded-2xl shadow-xl z-50 transform scale-0 transition-transform duration-300">
+            <p id="alert-message" class="text-center text-white text-lg font-medium"></p>
+        </div>
+    </div>
+    <canvas id="confetti-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-40"></canvas>
+
+    <script>
+        // Variabili globali per gestire lo stato dell'app
+        let gameState = 'titleInput';
+        let tournamentTitle = '';
+        let subTournaments = [];
+        let subTournamentResults = [];
+        let currentActivities = [];
+        let timer = null; // Per il timeout di selezione
+        let countdownInterval = null; // Per l'intervallo di conto alla rovescia
+        let matchDuration = 5; // Durata del timer in secondi
+        let pageColors = [
+            { from: 'from-purple-500', to: 'to-pink-500' },
+            { from: 'from-emerald-400', to: 'to-cyan-500' },
+            { from: 'from-rose-500', to: 'to-yellow-500' },
+            { from: 'from-indigo-600', to: 'to-blue-400' }
+        ];
+        let currentColorIndex = 0;
+        let confetti = null;
+
+        // Riferimenti agli elementi DOM
+        const body = document.body;
+        const titleInputContainer = document.getElementById('title-input-container');
+        const tournamentTitleInput = document.getElementById('tournament-title-input');
+        const subTournamentCreationContainer = document.getElementById('sub-tournament-creation-container');
+        const activitiesInputContainer = document.getElementById('activities-input-container');
+        const currentMainTournamentTitle = document.getElementById('current-main-tournament-title');
+        const subTournamentTitleInput = document.getElementById('sub-tournament-title-input');
+        const currentSubTournamentTitle = document.getElementById('current-sub-tournament-title');
+        const activityInput = document.getElementById('activity-input');
+        const currentActivitiesList = document.getElementById('current-activities-list');
+        const addSubTournamentBtn = document.getElementById('add-sub-tournament-btn');
+        const subTournamentsListDisplay = document.getElementById('sub-tournaments-list-display');
+        const durationSelectionContainer = document.getElementById('duration-selection-container');
+        const duration5sBtn = document.getElementById('duration-5s-btn');
+        const duration10sBtn = document.getElementById('duration-10s-btn');
+        const duration15sBtn = document.getElementById('duration-15s-btn');
+        const tournamentMatchContainer = document.getElementById('tournament-match-container');
+        const currentTournamentTitle = document.getElementById('current-tournament-title');
+        const matchTimerContainer = document.getElementById('match-timer-container');
+        const matchProgressBar = document.getElementById('match-progress-bar');
+        const matchTimerText = document.getElementById('match-timer-text');
+        const matchOptions = document.getElementById('match-options');
+        const finalResultContainer = document.getElementById('final-result-container');
+        const finalTournamentTitle = document.getElementById('final-tournament-title');
+        const finalResultBox = document.getElementById('final-result-box');
+        const finalPhraseText = document.getElementById('final-phrase');
+        const newTournamentBtnWrapper = document.getElementById('new-tournament-btn-wrapper');
+        const newTournamentBtn = document.getElementById('new-tournament-btn');
+        const customAlert = document.getElementById('custom-alert');
+        const alertMessage = document.getElementById('alert-message');
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const showFinalResultsBtn = document.getElementById('show-final-results-btn');
+        const diamond = document.getElementById('diamond');
+        const leftText = document.querySelector('.left-text');
+        const rightText = document.querySelector('.right-text');
+
+        // Suoni
+        const blipSynth = new Tone.MonoSynth({
+            oscillator: { type: "sine" },
+            envelope: {
+                attack: 0.005,
+                decay: 0.2,
+                sustain: 0,
+                release: 0.1,
+            },
+            filterEnvelope: {
+                attack: 0.005,
+                decay: 0.1,
+                sustain: 0.05,
+                release: 0.1,
+                baseFrequency: 200,
+                octaves: 2,
+            }
+        }).toDestination();
+        
+        const swooshSynth = new Tone.MonoSynth({
+            oscillator: { type: "triangle" },
+            envelope: {
+                attack: 0.05,
+                decay: 0.4,
+                sustain: 0,
+                release: 0.1,
+            },
+            filterEnvelope: {
+                attack: 0.05,
+                decay: 0.2,
+                sustain: 0.1,
+                release: 0.2,
+                baseFrequency: 100,
+                octaves: 3,
+            }
+        }).toDestination();
+        
+        const winnerSynth = new Tone.PolySynth(Tone.MonoSynth, {
+            oscillator: { type: "triangle" },
+            envelope: {
+                attack: 0.02,
+                decay: 0.3,
+                sustain: 0,
+                release: 0.2,
+            },
+            volume: -10 // Riduci il volume per renderlo meno aggressivo
+        }).toDestination();
+        
+        function playBlipSound() {
+            blipSynth.triggerAttackRelease("C5", "8n");
+        }
+        
+        function playSwooshSound() {
+            swooshSynth.triggerAttackRelease("G3", "4n");
+        }
+
+        function playWinnerMusic() {
+            winnerSynth.triggerAttackRelease(["C4", "E4", "G4"], "4n");
+        }
+
+        // Funzione per impostare i colori di sfondo
+        function setBackgroundGradient(colorPair) {
+            if (typeof tailwind === 'undefined' || !tailwind.theme || !tailwind.theme.colors) {
+                console.warn('Tailwind CSS object not yet available. Skipping gradient update.');
+                return;
+            }
+            const fromColor = tailwind.theme.colors[colorPair.from.split('-')[1]]['500'];
+            const toColor = tailwind.theme.colors[colorPair.to.split('-')[1]]['500'];
+            document.documentElement.style.setProperty('--color-from', fromColor);
+            document.documentElement.style.setProperty('--color-to', toColor);
+        }
+
+        // Mostra un messaggio di avviso personalizzato
+        function showAlert(message) {
+            alertMessage.textContent = message;
+            customAlert.classList.remove('scale-0');
+            customAlert.classList.add('scale-100');
+            setTimeout(() => {
+                customAlert.classList.remove('scale-100');
+                customAlert.classList.add('scale-0');
+            }, 2000);
+        }
+
+        // Gestisce il passaggio tra le schermate
+        function showScreen(screenId) {
+            const screens = [
+                titleInputContainer,
+                subTournamentCreationContainer,
+                durationSelectionContainer,
+                tournamentMatchContainer,
+                finalResultContainer
+            ];
+            screens.forEach(screen => {
+                if (screen.id === screenId) {
+                    screen.classList.remove('hidden', 'opacity-0');
+                    screen.classList.add('opacity-100');
+                } else {
+                    screen.classList.add('hidden', 'opacity-0');
+                }
+            });
+        }
+        
+        // Fasi del gioco
+        function startTitleInput() {
+            gameState = 'titleInput';
+            newTournamentBtnWrapper.classList.add('hidden');
+            showScreen('title-input-container');
+            tournamentTitleInput.focus();
+        }
+        
+        function startSubTournamentCreation() {
+            gameState = 'subTournamentCreation';
+            playSwooshSound();
+            
+            titleInputContainer.classList.remove('h-96', 'p-6', 'sm:p-8', 'md:p-12');
+            titleInputContainer.classList.add('p-4', 'sm:p-6', 'w-full', 'glass-box-mini');
+            
+            setTimeout(() => {
+                currentMainTournamentTitle.textContent = tournamentTitle;
+                showScreen('sub-tournament-creation-container');
+                newTournamentBtnWrapper.classList.remove('hidden');
+                subTournamentTitleInput.focus();
+                checkAddSubTournamentState();
+            }, 500);
+        }
+
+        function startActivitiesInput() {
+            if (subTournamentTitleInput.value.trim() === '') {
+                showAlert('Inserisci un nome per il sotto-torneo.');
+                return;
+            }
+            const subTitle = subTournamentTitleInput.value.trim();
+            currentSubTournamentTitle.textContent = subTitle;
+            subTournamentTitleInput.classList.add('hidden', 'opacity-0');
+            activitiesInputContainer.classList.remove('hidden', 'opacity-0');
+            activitiesInputContainer.classList.add('opacity-100');
+            activityInput.focus();
+        }
+
+        function showDurationSelection() {
+            gameState = 'selectDuration';
+            subTournamentCreationContainer.classList.add('opacity-0');
+            setTimeout(() => {
+                subTournamentCreationContainer.classList.add('hidden');
+                showScreen('duration-selection-container');
+            }, 500);
+        }
+
+        function startMiniTournament(subTournament) {
+            gameState = 'miniTournament';
+            currentActivities = [...subTournament.activities];
+            playSwooshSound();
+
+            durationSelectionContainer.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                durationSelectionContainer.classList.add('hidden');
+                tournamentMatchContainer.classList.remove('hidden', 'opacity-0');
+                tournamentMatchContainer.classList.add('opacity-100');
+                currentTournamentTitle.textContent = subTournament.title;
+                startNextMatch(currentActivities, subTournament.title, []); // Passa un array vuoto per le attività sconfitte iniziali
+            }, 500);
+        }
+
+        function startFinalPhase() {
+            clearTimeout(timer);
+            clearInterval(countdownInterval);
+
+            gameState = 'final';
+            showScreen('final-result-container');
+            
+            finalTournamentTitle.textContent = tournamentTitle;
+            finalResultBox.classList.remove('bg-white/10');
+            finalResultBox.classList.add('bg-white/20');
+            
+            let finalPhraseHTML = '';
+            subTournamentResults.forEach(result => {
+                finalPhraseHTML += `<p class="mb-2"><span class="font-bold">${result.title}:</span> ${result.winner}</p>`;
+            });
+
+            finalPhraseText.innerHTML = finalPhraseHTML;
+            
+            setTimeout(() => {
+                finalResultContainer.classList.add('opacity-100');
+                const confettiSettings = { target: 'confetti-canvas', max: 300 };
+                confetti = new ConfettiGenerator(confettiSettings);
+                confetti.render();
+                playWinnerMusic();
+            }, 2000);
+        }
+
+        function startNextMatch(activities, subTournamentTitle, defeatedActivities) {
+            if (activities.length === 1) {
+                subTournamentResults.push({ title: subTournamentTitle, winner: activities[0], defeated: defeatedActivities });
+                const entryContainer = document.createElement('div');
+                entryContainer.className = 'w-full sm:w-1/2 lg:w-1/3 p-3 glass-box flex flex-col items-center space-y-2 fade-in-down winner-box';
+                const titleBubble = document.createElement('div');
+                titleBubble.textContent = subTournamentTitle;
+                titleBubble.className = 'px-4 py-1 text-sm font-semibold rounded-full bg-white/10';
+                const winnerBox = document.createElement('div');
+                winnerBox.textContent = activities[0];
+                winnerBox.className = 'w-full px-4 py-2 text-center text-base font-medium glass-box';
+                entryContainer.appendChild(titleBubble);
+                entryContainer.appendChild(winnerBox);
+                subTournamentsListDisplay.appendChild(entryContainer);
+
+                clearTimeout(timer);
+                clearInterval(countdownInterval);
+
+                setTimeout(() => {
+                    tournamentMatchContainer.classList.add('hidden', 'opacity-0');
+                    subTournamentCreationContainer.classList.remove('hidden', 'opacity-0');
+                    subTournamentCreationContainer.classList.add('opacity-100');
+                    subTournamentTitleInput.value = '';
+                    subTournamentTitleInput.classList.remove('hidden', 'opacity-0');
+                    activitiesInputContainer.classList.add('hidden', 'opacity-0');
+                    subTournamentTitleInput.focus();
+                    if (subTournamentResults.length > 0) {
+                        showFinalResultsBtn.classList.remove('hidden');
+                    }
+                }, 1000);
+                return;
+            }
+            
+            const option1 = activities.shift();
+            const option2 = activities.length > 0 ? activities.shift() : null;
+            
+            matchOptions.innerHTML = '';
+            
+            const createOptionElement = (text, onClick) => {
+                const button = document.createElement('button');
+                button.textContent = text;
+                button.className = 'glass-box p-4 sm:p-6 text-lg sm:text-xl font-semibold text-center transform transition-all duration-300 hover:scale-105 fade-in-down';
+                button.onclick = () => {
+                    playBlipSound();
+                    onClick();
+                };
+                return button;
+            };
+
+            const option1Btn = createOptionElement(option1, () => selectWinner(option1, option2, activities, subTournamentTitle, defeatedActivities));
+            matchOptions.appendChild(option1Btn);
+
+            if (option2) {
+                const option2Btn = createOptionElement(option2, () => selectWinner(option2, option1, activities, subTournamentTitle, defeatedActivities));
+                matchOptions.appendChild(option2Btn);
+            } else {
+                 activities.push(option1);
+                 startNextMatch(activities, subTournamentTitle, defeatedActivities);
+                 return;
+            }
+            
+            let matchTimer = matchDuration; // Usa la durata selezionata
+            matchProgressBar.style.width = '100%';
+            matchTimerText.textContent = `Scegli entro ${matchTimer} secondi...`;
+            
+            clearTimeout(timer);
+            clearInterval(countdownInterval);
+            
+            timer = setTimeout(() => handleTimeout(activities, subTournamentTitle, defeatedActivities), matchDuration * 1000);
+            
+            countdownInterval = setInterval(() => {
+                matchTimer--;
+                if (matchTimer > 0) {
+                    matchTimerText.textContent = `Scegli entro ${matchTimer} secondi...`;
+                    matchProgressBar.style.width = `${(matchTimer / matchDuration) * 100}%`;
+                } else {
+                    matchTimerText.textContent = `Tempo scaduto!`;
+                    matchProgressBar.style.width = '0%';
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        }
+
+        function selectWinner(winner, loser, activities, subTournamentTitle, defeatedActivities) {
+            if (gameState !== 'miniTournament') { return; }
+            clearTimeout(timer);
+            clearInterval(countdownInterval);
+            activities.push(winner);
+            defeatedActivities.push(loser);
+
+            if (activities.length > 1) {
+                 activities.sort(() => Math.random() - 0.5);
+            }
+            
+            startNextMatch(activities, subTournamentTitle, defeatedActivities);
+        }
+        
+        function handleTimeout(activities, subTournamentTitle, defeatedActivities) {
+            if (gameState !== 'miniTournament') { return; }
+            showAlert('Tempo scaduto! Scegli più velocemente.');
+            const option1 = matchOptions.children[0].textContent;
+            const option2 = matchOptions.children[1].textContent;
+            activities.push(option1, option2);
+            startNextMatch(activities, subTournamentTitle, defeatedActivities);
+        }
+
+        function resetGame() {
+            clearTimeout(timer);
+            clearInterval(countdownInterval);
+            
+            tournamentTitle = '';
+            tournamentTitleInput.value = '';
+            subTournaments = [];
+            subTournamentResults = [];
+            currentActivities = [];
+            currentActivitiesList.innerHTML = '';
+            subTournamentsListDisplay.innerHTML = '';
+            
+            finalResultContainer.classList.add('hidden', 'opacity-0');
+            titleInputContainer.classList.remove('p-4', 'sm:p-6', 'glass-box-mini');
+            titleInputContainer.classList.add('p-6', 'sm:p-8', 'md:p-12', 'h-96');
+            
+            if (confetti) { confetti.clear(); }
+            showFinalResultsBtn.classList.add('hidden');
+
+            currentColorIndex = 0;
+            setBackgroundGradient(pageColors[currentColorIndex]);
+            
+            startTitleInput();
+        }
+        
+        function makeTitleEditable(element, onSave) {
+            element.addEventListener('dblclick', () => {
+                const text = element.textContent;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = text;
+                input.className = 'text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-center text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300';
+                
+                let changesSaved = false;
+
+                const saveChanges = () => {
+                    if (changesSaved) return;
+                    changesSaved = true;
+
+                    const newText = input.value.trim();
+                    if (newText) {
+                        element.textContent = newText;
+                        onSave(newText);
+                    }
+                    if (document.body.contains(input)) {
+                        input.replaceWith(element);
+                    }
+                };
+
+                const handleKeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        saveChanges();
+                        input.blur();
+                    }
+                };
+                
+                element.replaceWith(input);
+                input.focus();
+                
+                input.addEventListener('blur', saveChanges);
+                input.addEventListener('keydown', handleKeydown);
+            });
+        }
+        
+        function checkAddSubTournamentState() {
+            if (currentActivitiesList.children.length >= 2) {
+                addSubTournamentBtn.disabled = false;
+                addSubTournamentBtn.classList.remove('disabled:opacity-50');
+                addSubTournamentBtn.classList.add('pulse-once');
+            } else {
+                 addSubTournamentBtn.disabled = true;
+                 addSubTournamentBtn.classList.add('disabled:opacity-50');
+                 addSubTournamentBtn.classList.remove('pulse-once');
+            }
+        }
+        
+        function getRotationAngle(element) {
+            const style = window.getComputedStyle(element);
+            const transform = style.getPropertyValue('transform');
+            if (transform === 'none') return 0;
+            const matrix = new DOMMatrix(transform);
+            const angle = Math.round(Math.atan2(matrix.b, matrix.a) * (180 / Math.PI));
+            return (angle < 0) ? angle + 360 : angle;
+        }
+
+        function updateColors() {
+            if (!diamond) return;
+            const angle = getRotationAngle(diamond);
+            if (angle > 135 && angle < 315) {
+                leftText.style.color = '#fff';
+                leftText.style.textShadow = '0 0 5px rgba(255, 255, 255, 0.5)';
+                rightText.style.color = '#8e2de2';
+                rightText.style.textShadow = '0 0 5px rgba(142, 45, 226, 0.5)';
+            } else {
+                leftText.style.color = '#8e2de2';
+                leftText.style.textShadow = '0 0 5px rgba(142, 45, 226, 0.5)';
+                rightText.style.color = '#fff';
+                rightText.style.textShadow = '0 0 5px rgba(255, 255, 255, 0.5)';
+            }
+            requestAnimationFrame(updateColors);
+        }
+
+        // Listeners principali
+        tournamentTitleInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && tournamentTitleInput.value.trim() !== '') {
+                tournamentTitle = tournamentTitleInput.value.trim();
+                startSubTournamentCreation();
+            }
+        });
+
+        subTournamentTitleInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && subTournamentTitleInput.value.trim() !== '') {
+                 startActivitiesInput();
+            }
+        });
+
+        activityInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && activityInput.value.trim() !== '') {
+                const newActivity = activityInput.value.trim();
+                
+                const activityBox = document.createElement('div');
+                activityBox.textContent = newActivity;
+                activityBox.className = 'glass-box px-4 py-2 w-full text-sm sm:text-base font-medium transition-all duration-300 fade-in-down';
+                currentActivitiesList.appendChild(activityBox);
+                
+                activityInput.value = '';
+                
+                checkAddSubTournamentState();
+            }
+        });
+
+        addSubTournamentBtn.addEventListener('click', () => {
+             const subTournamentTitle = currentSubTournamentTitle.textContent;
+             const activities = Array.from(currentActivitiesList.children).map(el => el.textContent);
+             
+             if (subTournamentTitle && activities.length >= 2) {
+                 const newSubTournament = { title: subTournamentTitle, activities: activities };
+                 subTournaments.push(newSubTournament);
+                 
+                 subTournamentTitleInput.value = '';
+                 currentActivitiesList.innerHTML = '';
+                 activityInput.value = '';
+                 
+                 checkAddSubTournamentState();
+                 showDurationSelection();
+             } else {
+                 showAlert('Devi inserire almeno 2 attività per un sotto-torneo.');
+             }
+        });
+
+        duration5sBtn.addEventListener('click', () => {
+            matchDuration = 5;
+            const subTournament = subTournaments[subTournaments.length - 1];
+            startMiniTournament(subTournament);
+        });
+
+        duration10sBtn.addEventListener('click', () => {
+            matchDuration = 10;
+            const subTournament = subTournaments[subTournaments.length - 1];
+            startMiniTournament(subTournament);
+        });
+
+        duration15sBtn.addEventListener('click', () => {
+            matchDuration = 15;
+            const subTournament = subTournaments[subTournaments.length - 1];
+            startMiniTournament(subTournament);
+        });
+        
+        showFinalResultsBtn.addEventListener('click', startFinalPhase);
+        newTournamentBtn.addEventListener('click', resetGame);
+        
+        makeTitleEditable(currentMainTournamentTitle, (newTitle) => tournamentTitle = newTitle);
+        makeTitleEditable(currentSubTournamentTitle, (newTitle) => {});
+
+        // Avvio iniziale dell'app
+        document.addEventListener('DOMContentLoaded', () => {
+             setTimeout(() => {
+                setBackgroundGradient(pageColors[currentColorIndex]);
+                startTitleInput();
+                updateColors();
+            }, 150);
+        });
+    </script>
+</body>
+</html>
