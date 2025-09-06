@@ -254,9 +254,9 @@
 
         <!-- Schermata iniziale: input titolo torneo principale -->
         <div id="title-input-container" class="w-full flex flex-col items-center justify-center p-6 sm:p-8 md:p-12 glass-box transition-all duration-700 h-96 space-y-6">
-            <!-- Nuovo Logo integrato -->
+            <!-- Nuovo Logo integrato - Rimosse le classi "hidden md:block" per rendere il testo visibile su mobile -->
             <div class="main-logo-container flex items-center justify-center gap-2 md:gap-4 mb-6">
-                <div class="choose-text left-text hidden md:block">CHOOSE</div>
+                <div class="choose-text left-text">CHOOSE</div>
                 <div class="diamond-container">
                     <div class="diamond-icon" id="diamond">
                         <div class="number-container">
@@ -264,7 +264,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="choose-text right-text hidden md:block">CHOOSE</div>
+                <div class="choose-text right-text">CHOOSE</div>
             </div>
             <h1 class="text-4xl sm:text-5xl font-extrabold text-center text-white tracking-wide animate-pulse"></h1>
             <input type="text" id="tournament-title-input" placeholder="Cosa vuoi fare?" class="text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-center text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300">
@@ -282,7 +282,7 @@
                 <div id="activities-bubble-container" class="w-full flex flex-wrap items-center justify-center p-2 mb-4"></div>
                 <input type="text" id="activity-input" placeholder="Elenca le alternative..." class="text-input w-full p-4 bg-white/10 rounded-xl text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300 mb-4">
                 
-                <!-- Contenitore dei suggerimenti -->
+                <!-- Contenitore dei suggerimenti, è già responsive grazie a 'flex-wrap' -->
                 <div id="suggestions-container" class="w-full flex flex-wrap items-center justify-center gap-2 p-2 mb-4"></div>
                 
                 <button id="start-tournament-btn" class="px-8 py-4 w-full text-lg sm:text-xl font-bold rounded-full shadow-lg green-gradient-button">Inizia a scegliere</button>
