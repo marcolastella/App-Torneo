@@ -228,23 +228,6 @@
         .bubble-remove:hover {
             color: white;
         }
-        .suggestion-bubble {
-            background-color: rgba(142, 45, 226, 0.2);
-            border: 1px solid rgba(142, 45, 226, 0.5);
-            cursor: pointer;
-        }
-        .loading-spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #fff;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body class="text-white flex flex-col items-center justify-start min-h-screen p-4 md:p-8 relative noise-overlay">
@@ -281,9 +264,6 @@
                 <h2 id="current-tournament-title-activities" class="text-2xl sm:text-3xl font-bold gradient-text mb-4 text-center"></h2>
                 <div id="activities-bubble-container" class="w-full flex flex-wrap items-center justify-center p-2 mb-4"></div>
                 <input type="text" id="activity-input" placeholder="Elenca le alternative..." class="text-input w-full p-4 bg-white/10 rounded-xl text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300 mb-4">
-                
-                <!-- Contenitore dei suggerimenti, è già responsive grazie a 'flex-wrap' -->
-                <div id="suggestions-container" class="w-full flex flex-wrap items-center justify-center gap-2 p-2 mb-4"></div>
                 
                 <button id="start-tournament-btn" class="px-8 py-4 w-full text-lg sm:text-xl font-bold rounded-full shadow-lg green-gradient-button">Inizia a scegliere</button>
             </div>
@@ -354,7 +334,6 @@
         let countdownInterval = null; // Per l'intervallo di conto alla rovescia
         let matchDuration = 5; // Durata del timer in secondi
         let confetti = null;
-        let suggestionLoading = false;
 
         // Riferimenti agli elementi DOM
         const body = document.body;
@@ -391,7 +370,6 @@
         const historyList = document.getElementById('history-list');
         const previousWinnerBox = document.getElementById('previous-winner-box');
         const previousWinnerName = document.getElementById('previous-winner-name');
-        const suggestionsContainer = document.getElementById('suggestions-container');
 
         // Suoni
         const blipSynth = new Tone.MonoSynth({
@@ -483,83 +461,6 @@
             });
         }
         
-        // Funzione per mostrare e nascondere il loader
-        function toggleLoading(isLoading) {
-            suggestionLoading = isLoading;
-            if (isLoading) {
-                suggestionsContainer.innerHTML = `<div class="loading-spinner"></div>`;
-            } else {
-                if (suggestionsContainer.innerHTML.includes('loading-spinner')) {
-                    suggestionsContainer.innerHTML = '';
-                }
-            }
-        }
-        
-        // Funzione per ottenere suggerimenti tramite l'API di Gemini
-        async function fetchSuggestions(currentActivities) {
-            if (suggestionLoading) return;
-            toggleLoading(true);
-
-            // Aggiunge l'ultima alternativa inserita al contesto per un suggerimento più preciso
-            const lastActivity = currentActivities[currentActivities.length - 1];
-            let prompt = `Considera le seguenti alternative: ${currentActivities.join(', ')}. Sulla base di queste, suggerisci 5 nuove alternative uniche che si correlano o si adattano a questo gruppo. Rispondi solo con un array JSON di stringhe, senza spiegazioni aggiuntive. Le alternative devono essere brevi.`;
-            
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "ARRAY",
-                        items: {
-                            type: "STRING"
-                        }
-                    }
-                }
-            };
-
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const result = await response.json();
-                const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (jsonText) {
-                    const parsed = JSON.parse(jsonText);
-                    const newSuggestions = parsed.filter(s => !activities.includes(s));
-                    displaySuggestions(newSuggestions);
-                }
-            } catch (error) {
-                console.error("Errore durante il recupero dei suggerimenti:", error);
-                showAlert("Ops, c'è stato un problema nel recupero dei suggerimenti.");
-            } finally {
-                toggleLoading(false);
-            }
-        }
-        
-        // Funzione per mostrare i suggerimenti come bolle cliccabili
-        function displaySuggestions(suggestions) {
-            suggestionsContainer.innerHTML = '';
-            if (suggestions && suggestions.length > 0) {
-                suggestions.forEach(suggestionText => {
-                    const suggestionBubble = document.createElement('div');
-                    suggestionBubble.className = 'activity-bubble suggestion-bubble cursor-pointer';
-                    suggestionBubble.textContent = suggestionText;
-                    suggestionBubble.onclick = () => {
-                        addActivity(suggestionText);
-                        // Non pulire l'input, ma rigenera i suggerimenti per includere la nuova scelta
-                        fetchSuggestions(activities);
-                    };
-                    suggestionsContainer.appendChild(suggestionBubble);
-                });
-            }
-        }
-        
         // Fasi del gioco
         function startTitleInput() {
             gameState = 'titleInput';
@@ -591,7 +492,7 @@
                 addActivityBubble(activity);
                 activityInput.value = '';
             } else {
-                 showAlert('Questa alternativa è già presente.');
+                showAlert('Questa alternativa è già presente.');
             }
         }
 
@@ -609,7 +510,6 @@
                     activities.splice(index, 1);
                 }
                 activityBubble.remove();
-                suggestionsContainer.innerHTML = '';
             };
             
             activityBubble.appendChild(removeBtn);
@@ -703,7 +603,7 @@
             currentActivities.push(winner);
 
             if (currentActivities.length > 1) {
-                 currentActivities.sort(() => Math.random() - 0.5);
+                currentActivities.sort(() => Math.random() - 0.5);
             }
             
             startNextMatch(currentActivities);
@@ -772,7 +672,6 @@
             tournamentTitleInput.value = '';
             activities = [];
             activitiesBubbleContainer.innerHTML = '';
-            suggestionsContainer.innerHTML = '';
             
             activitiesInputContainer.classList.add('hidden', 'opacity-0');
             durationSelectionContainer.classList.add('hidden', 'opacity-0');
@@ -833,11 +732,6 @@
         activityInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && activityInput.value.trim() !== '') {
                 addActivity(activityInput.value);
-                suggestionsContainer.innerHTML = '';
-                // Genera suggerimenti solo dopo il primo inserimento
-                if (activities.length > 0) {
-                     fetchSuggestions(activities);
-                }
             }
         });
         
@@ -871,9 +765,9 @@
         // Avvio iniziale dell'app
         document.addEventListener('DOMContentLoaded', () => {
              setTimeout(() => {
-                startTitleInput();
-                updateColors();
-            }, 150);
+                 startTitleInput();
+                 updateColors();
+             }, 150);
         });
     </script>
 </body>
