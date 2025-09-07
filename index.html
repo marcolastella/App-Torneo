@@ -140,28 +140,14 @@
             100% { transform: scale(1); }
         }
         /* Stili per il nuovo logo */
-        .main-logo-container {
-            width: 100%;
-            max-width: 400px;
-        }
         .choose-text {
-            font-size: 1.5rem;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.2em;
             transition: color 0.5s ease-in-out, transform 0.5s ease-in-out;
             text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
         }
-        .diamond-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 64px;
-            height: 64px;
-        }
         .diamond-icon {
-            width: 64px;
-            height: 64px;
             transform: rotate(45deg);
             background: conic-gradient(
                 from 0deg,
@@ -187,7 +173,6 @@
             animation: rotate-number 8s infinite ease-in-out;
         }
         .number-two {
-            font-size: 3rem;
             font-weight: bold;
             color: #fff;
             text-shadow: 0 0 10px #fff;
@@ -236,20 +221,20 @@
     <div id="main-container" class="w-full max-w-md mx-auto flex flex-col items-center relative z-20 min-h-screen justify-center">
 
         <!-- Schermata iniziale: input titolo torneo principale -->
-        <div id="title-input-container" class="w-full flex flex-col items-center justify-center p-6 sm:p-8 md:p-12 glass-box transition-all duration-700 space-y-6">
-            <!-- Nuovo Logo integrato - Rimosse le classi "hidden md:block" per rendere il testo visibile su mobile -->
-            <div class="main-logo-container flex items-center justify-center gap-2 md:gap-4 mb-6">
-                <div class="choose-text left-text">CHOOSE</div>
-                <div class="diamond-container">
-                    <div class="diamond-icon" id="diamond">
+        <div id="title-input-container" class="w-full flex flex-col items-center justify-center p-6 sm:p-8 glass-box transition-all duration-700 space-y-6">
+            <!-- Logo Responsive -->
+            <div class="flex items-center justify-center gap-2 sm:gap-3 mb-4">
+                <div class="choose-text left-text text-lg sm:text-xl md:text-2xl">CHOOSE</div>
+                <div class="diamond-container flex justify-center items-center w-10 h-10 sm:w-12 sm:h-12">
+                    <div class="diamond-icon w-10 h-10 sm:w-12 sm:h-12" id="diamond">
                         <div class="number-container">
-                            <div class="number-two">2</div>
+                            <div class="number-two text-2xl sm:text-3xl">2</div>
                         </div>
                     </div>
                 </div>
-                <div class="choose-text right-text">CHOOSE</div>
+                <div class="choose-text right-text text-lg sm:text-xl md:text-2xl">CHOOSE</div>
             </div>
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-center text-white tracking-wide animate-pulse"></h1>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-center text-white tracking-wide animate-pulse"></h1>
             <input type="text" id="tournament-title-input" placeholder="Cosa vuoi fare?" class="text-input w-full p-3 sm:p-4 bg-white/10 rounded-xl text-center text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300">
             <!-- Box cronologia risultati -->
             <div id="history-box-main" class="w-full flex flex-col p-2 glass-box opacity-80 transition-all duration-700 hidden">
@@ -259,7 +244,7 @@
 
         <!-- Schermata di inserimento attività -->
         <div id="activities-input-container" class="view hidden w-full flex-col items-center opacity-0 transition-opacity duration-500">
-            <div class="w-full flex flex-col items-center p-6 sm:p-8 md:p-12 glass-box rounded-2xl mb-6">
+            <div class="w-full flex flex-col items-center p-6 sm:p-8 glass-box rounded-2xl mb-6">
                 <h2 id="current-tournament-title-activities" class="text-2xl sm:text-3xl font-bold gradient-text mb-4 text-center"></h2>
                 <div id="activities-bubble-container" class="w-full flex flex-wrap items-center justify-center p-2 mb-4"></div>
                 <input type="text" id="activity-input" placeholder="Elenca le alternative..." class="text-input w-full p-4 bg-white/10 rounded-xl text-lg sm:text-xl font-medium border-2 border-transparent focus:outline-none focus:border-white/50 transition-all duration-300 mb-4">
@@ -270,19 +255,19 @@
 
         <!-- Schermata di selezione durata timer -->
         <div id="duration-selection-container" class="hidden w-full flex-col items-center opacity-0 transition-opacity duration-500">
-            <div class="w-full flex flex-col items-center p-6 sm:p-8 md:p-12 glass-box rounded-2xl mb-6 text-center">
+            <div class="w-full flex flex-col items-center p-6 sm:p-8 glass-box rounded-2xl mb-6 text-center">
                 <h2 class="text-2xl sm:text-3xl font-bold mb-6">Scegli un countdown</h2>
-                <div class="w-full flex justify-center space-x-4">
-                    <button id="duration-5s-btn" class="orange-button px-6 py-4 rounded-xl text-lg font-bold">5 Sec</button>
-                    <button id="duration-10s-btn" class="orange-button px-6 py-4 rounded-xl text-lg font-bold">10 Sec</button>
-                    <button id="duration-15s-btn" class="orange-button px-6 py-4 rounded-xl text-lg font-bold">15 Sec</button>
+                <div class="w-full flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <button id="duration-5s-btn" class="orange-button px-6 py-4 rounded-xl text-lg font-bold w-full sm:w-auto">5 Sec</button>
+                    <button id="duration-10s-btn" class="orange-button px-6 py-4 rounded-xl text-lg font-bold w-full sm:w-auto">10 Sec</button>
+                    <button id="duration-15s-btn" class="orange-button px-6 py-4 rounded-xl text-lg font-bold w-full sm:w-auto">15 Sec</button>
                 </div>
             </div>
         </div>
 
         <!-- Contenitore del torneo (visibile durante i match) -->
         <div id="tournament-match-container" class="hidden w-full flex-col items-center space-y-6 mt-8 opacity-0 transition-opacity duration-500">
-            <h3 id="current-tournament-title" class="text-3xl sm:text-4xl font-bold gradient-text mb-4 text-center"></h3>
+            <h3 id="current-tournament-title" class="text-2xl sm:text-3xl font-bold gradient-text mb-4 text-center"></h3>
             <!-- Contenitore del timer con barra di caricamento -->
             <div id="match-timer-container" class="w-full h-10 relative glass-box p-1 overflow-hidden rounded-full">
                 <div id="match-progress-bar" class="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-linear" style="background-image: linear-gradient(to right, var(--color-from), var(--color-to)); width: 100%;"></div>
@@ -292,19 +277,19 @@
         </div>
 
         <!-- Contenitore del risultato finale -->
-        <div id="final-result-container" class="hidden w-full flex-col items-center space-y-8 mt-8 opacity-0 transition-opacity duration-500">
-            <div class="flex items-center justify-center gap-2 md:gap-4 mb-6">
-                <div class="choose-text">CHOOSE</div>
-                <div class="diamond-container">
-                    <div class="diamond-icon">
+        <div id="final-result-container" class="hidden w-full flex-col items-center space-y-6 sm:space-y-8 mt-8 opacity-0 transition-opacity duration-500">
+            <div class="flex items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div class="choose-text text-xl sm:text-2xl md:text-3xl">CHOOSE</div>
+                <div class="diamond-container flex justify-center items-center w-12 h-12 sm:w-16 sm:h-16">
+                    <div class="diamond-icon w-12 h-12 sm:w-16 sm:h-16">
                         <div class="number-container">
-                            <div class="number-two">2</div>
+                            <div class="number-two text-3xl sm:text-4xl">2</div>
                         </div>
                     </div>
                 </div>
-                <div class="choose-text">CHOOSE</div>
+                <div class="choose-text text-xl sm:text-2xl md:text-3xl">CHOOSE</div>
             </div>
-            <h2 id="final-tournament-title" class="text-4xl sm:text-5xl font-extrabold gradient-text animate-pulse mb-6 text-center"></h2>
+            <h2 id="final-tournament-title" class="text-3xl sm:text-4xl font-extrabold gradient-text animate-pulse text-center"></h2>
             
             <div id="final-result-box" class="w-full flex flex-col p-6 sm:p-8 glass-box transition-all duration-700 winner-box">
                 <h3 class="text-xl sm:text-2xl font-semibold mb-4 text-center">Il Vincitore è:</h3>
@@ -316,7 +301,7 @@
                 <div id="history-list" class="flex flex-row flex-wrap justify-center gap-2"></div>
             </div>
             
-            <div class="flex justify-between w-full space-x-4">
+            <div class="flex flex-col sm:flex-row justify-between w-full gap-4">
                 <button id="new-tournament-btn-final" class="px-6 py-3 rounded-full text-lg font-bold new-button-color flex-1">
                     <span>Nuovo</span>
                 </button>
@@ -482,7 +467,7 @@
             gameState = 'activitiesInput';
             playSwooshSound();
             
-            titleInputContainer.classList.remove('h-96', 'p-6', 'sm:p-8', 'md:p-12');
+            titleInputContainer.classList.remove('p-6', 'sm:p-8');
             titleInputContainer.classList.add('p-4', 'sm:p-6', 'w-full', 'glass-box');
             
             setTimeout(() => {
@@ -700,7 +685,7 @@
             finalResultContainer.classList.add('hidden', 'opacity-0');
             
             titleInputContainer.classList.remove('p-4', 'sm:p-6', 'w-full');
-            titleInputContainer.classList.add('p-6', 'sm:p-8', 'md:p-12');
+            titleInputContainer.classList.add('p-6', 'sm:p-8');
             
             if (confetti) { confetti.clear(); }
 
@@ -809,12 +794,5 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
 
 
